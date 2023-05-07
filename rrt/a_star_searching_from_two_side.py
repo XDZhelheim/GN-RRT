@@ -7,7 +7,8 @@ searching path from start and end simultaneously
 
 import numpy as np
 import matplotlib
-matplotlib.use('TKAgg')
+
+matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import math
 
@@ -41,10 +42,8 @@ def gcost(fixed_node, update_node_coordinate):
     return gcost
 
 
-def boundary_and_obstacles(start, goal, top_vertex, bottom_vertex, obs_number=20, obs_max_len=40):
+def boundary_and_obstacles(top_vertex, bottom_vertex, obs_number=20, obs_max_len=40):
     """
-    :param start: start coordinate
-    :param goal: goal coordinate
     :param top_vertex: top right vertex coordinate of boundary
     :param bottom_vertex: bottom left vertex coordinate of boundary
     :param obs_number: number of obstacles generated in the map
@@ -63,16 +62,11 @@ def boundary_and_obstacles(start, goal, top_vertex, bottom_vertex, obs_number=20
     # ! MODIFIED generate random obstacles (rectangular)
     ob_x = []
     ob_y = []
-    n = 0
-    while True:
+    for _ in range(obs_number):
         rand_x = np.random.randint(bottom_vertex[0] + 1, top_vertex[0])
         rand_y = np.random.randint(bottom_vertex[1] + 1, top_vertex[1])
         rand_x_len = np.random.randint(1, obs_max_len + 1)
         rand_y_len = np.random.randint(1, obs_max_len + 1)
-        if rand_x + rand_x_len > start[0] and rand_y + rand_y_len > start[1]:
-            continue
-        if rand_x + rand_x_len > goal[0] and rand_y + rand_y_len > goal[1]:
-            continue
         for i in range(0, rand_x_len):
             if rand_x + i > top_vertex[0]:
                 break
@@ -81,21 +75,15 @@ def boundary_and_obstacles(start, goal, top_vertex, bottom_vertex, obs_number=20
                     break
                 ob_x.append(rand_x + i)
                 ob_y.append(rand_y + j)
-        n += 1
-        if n > obs_number:
-            break
-                
-        
+
     # x y coordinate in certain order for boundary
     x = ax + bx + cx + dx
     y = ay + by + cy + dy
     obstacle = np.vstack((ob_x, ob_y)).T.tolist()
-    # remove start and goal coordinate in obstacle list
-    obstacle = [coor for coor in obstacle if coor != start and coor != goal]
     obs_array = np.array(obstacle)
     bound = np.vstack((x, y)).T
     bound_obs = np.vstack((bound, obs_array))
-    return bound_obs, obstacle
+    return bound_obs, obstacle, ob_x, ob_y
 
 
 def find_neighbor(node, ob, closed):
@@ -170,8 +158,12 @@ def find_path(open_list, closed_list, goal, obstacle):
                     open_list[ind].reset_f()
                     open_list[ind].parent = node
             else:  # new coordinate, create corresponding node
-                ele_node = Node(coordinate=element, parent=node,
-                                G=gcost(node, element), H=hcost(element, goal))
+                ele_node = Node(
+                    coordinate=element,
+                    parent=node,
+                    G=gcost(node, element),
+                    H=hcost(element, goal),
+                )
                 open_list.append(ele_node)
         open_list.remove(node)
         closed_list.append(node)
@@ -243,8 +235,10 @@ def get_path(org_list, goal_list, coordinate):
 
 def random_coordinate(bottom_vertex, top_vertex):
     # generate random coordinates inside maze
-    coordinate = [np.random.randint(bottom_vertex[0] + 1, top_vertex[0]),
-                  np.random.randint(bottom_vertex[1] + 1, top_vertex[1])]
+    coordinate = [
+        np.random.randint(bottom_vertex[0] + 1, top_vertex[0]),
+        np.random.randint(bottom_vertex[1] + 1, top_vertex[1]),
+    ]
     return coordinate
 
 
@@ -259,12 +253,12 @@ def draw(close_origin, close_goal, start, end, bound):
         close_goal = np.array([end])
     plt.cla()
     plt.gcf().set_size_inches(11, 9, forward=True)
-    plt.axis('equal')
-    plt.plot(close_origin[:, 0], close_origin[:, 1], 'oy')
-    plt.plot(close_goal[:, 0], close_goal[:, 1], 'og')
-    plt.plot(bound[:, 0], bound[:, 1], 'sk')
-    plt.plot(end[0], end[1], '*b', label='Goal')
-    plt.plot(start[0], start[1], '^b', label='Origin')
+    plt.axis("equal")
+    plt.plot(close_origin[:, 0], close_origin[:, 1], "oy")
+    plt.plot(close_goal[:, 0], close_goal[:, 1], "og")
+    plt.plot(bound[:, 0], bound[:, 1], "sk")
+    plt.plot(end[0], end[1], "*b", label="Goal")
+    plt.plot(start[0], start[1], "^b", label="Origin")
     plt.legend()
     plt.pause(0.0001)
 
@@ -288,32 +282,34 @@ def draw_control(org_closed, goal_closed, flag, start, end, bound, obstacle):
         if node_intersect:  # a path is find
             path = get_path(org_closed, goal_closed, node_intersect[0])
             stop_loop = 1
-            print('Path found!')
+            print("Path found!")
             if show_animation:  # draw the path
-                plt.plot(path[:, 0], path[:, 1], '-r')
-                plt.title('Robot Arrived', size=20, loc='center')
+                plt.plot(path[:, 0], path[:, 1], "-r")
+                plt.title("Robot Arrived", size=20, loc="center")
                 plt.pause(0.01)
                 plt.show()
     elif flag == 1:  # start point blocked first
         stop_loop = 1
-        print('There is no path to the goal! Start point is blocked!')
+        print("There is no path to the goal! Start point is blocked!")
     elif flag == 2:  # end point blocked first
         stop_loop = 1
-        print('There is no path to the goal! End point is blocked!')
+        print("There is no path to the goal! End point is blocked!")
     if show_animation:  # blocked case, draw the border line
-        info = 'There is no path to the goal!' \
-               ' Robot&Goal are split by border' \
-               ' shown in red \'x\'!'
+        info = (
+            "There is no path to the goal!"
+            " Robot&Goal are split by border"
+            " shown in red 'x'!"
+        )
         if flag == 1:
             border = get_border_line(org_closed, obstacle)
-            plt.plot(border[:, 0], border[:, 1], 'xr')
-            plt.title(info, size=14, loc='center')
+            plt.plot(border[:, 0], border[:, 1], "xr")
+            plt.title(info, size=14, loc="center")
             plt.pause(0.01)
             plt.show()
         elif flag == 2:
             border = get_border_line(goal_closed, obstacle)
-            plt.plot(border[:, 0], border[:, 1], 'xr')
-            plt.title(info, size=14, loc='center')
+            plt.plot(border[:, 0], border[:, 1], "xr")
+            plt.title(info, size=14, loc="center")
             plt.pause(0.01)
             plt.show()
     return stop_loop, path
@@ -337,56 +333,58 @@ def searching_control(start, end, bound, obstacle):
     path = None
     while True:
         # searching from start to end
-        origin_open, origin_close = \
-            find_path(origin_open, origin_close, target_goal, bound)
+        origin_open, origin_close = find_path(
+            origin_open, origin_close, target_goal, bound
+        )
         if not origin_open:  # no path condition
             flag = 1  # origin node is blocked
-            draw_control(origin_close, goal_close, flag, start, end, bound,
-                         obstacle)
+            draw_control(origin_close, goal_close, flag, start, end, bound, obstacle)
             break
         # update target for searching from end to start
         target_origin = min(origin_open, key=lambda x: x.F).coordinate
 
         # searching from end to start
-        goal_open, goal_close = \
-            find_path(goal_open, goal_close, target_origin, bound)
+        goal_open, goal_close = find_path(goal_open, goal_close, target_origin, bound)
         if not goal_open:  # no path condition
             flag = 2  # goal is blocked
-            draw_control(origin_close, goal_close, flag, start, end, bound,
-                         obstacle)
+            draw_control(origin_close, goal_close, flag, start, end, bound, obstacle)
             break
         # update target for searching from start to end
         target_goal = min(goal_open, key=lambda x: x.F).coordinate
 
         # continue searching, draw the process
-        stop_sign, path = draw_control(origin_close, goal_close, flag, start,
-                                       end, bound, obstacle)
+        stop_sign, path = draw_control(
+            origin_close, goal_close, flag, start, end, bound, obstacle
+        )
         if stop_sign:
             break
     return path
 
 
 def main(obstacle_number=20, obs_max_len=40):
-    print(__file__ + ' start!')
+    print(__file__ + " start!")
 
     top_vertex = [200, 200]  # top right vertex of boundary
     bottom_vertex = [0, 0]  # bottom left vertex of boundary
 
+    # generate boundary and obstacles
+    bound, obstacle, ob_x, ob_y = boundary_and_obstacles(
+        top_vertex, bottom_vertex, obstacle_number, obs_max_len
+    )
+
     # generate start and goal point randomly
     start = random_coordinate(bottom_vertex, top_vertex)
     end = random_coordinate(bottom_vertex, top_vertex)
-
-    # generate boundary and obstacles
-    bound, obstacle = boundary_and_obstacles(start, end, top_vertex,
-                                             bottom_vertex,
-                                             obstacle_number,
-                                             obs_max_len)
+    while start[0] in ob_x and start[1] in ob_y:
+        start = random_coordinate(bottom_vertex, top_vertex)
+    while end[0] in ob_x and end[1] in ob_y:
+        end = random_coordinate(bottom_vertex, top_vertex)
 
     path = searching_control(start, end, bound, obstacle)
     if not show_animation:
         print(path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     show_animation = True
     main(obstacle_number=20, obs_max_len=40)
