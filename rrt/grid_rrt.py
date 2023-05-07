@@ -298,7 +298,7 @@ class GridRRT:
 def main(gx, gy):
     print("start " + __file__)
 
-    # ====Search Path with RRT====
+    # 所有障碍物都是长方形 [x, y, x_len, y_len] xy是长方形左下角坐标
     obstacleList = [
         [10, 10, 10, 10],
         [10, 20, 5, 5],
@@ -313,6 +313,7 @@ def main(gx, gy):
         play_area=[0, 200, 0, 200],
         max_iter=200,
     )
+    # 200*200 image, 整个代码里所有node坐标都是整数
 
     s = time.time()
     path, num_iter = rrt.planning(animation=show_animation)
@@ -323,7 +324,6 @@ def main(gx, gy):
     if path is None:
         print("Cannot find path")
     else:
-        print("found path!!")
         print(np.array(path))
 
         # Draw final path

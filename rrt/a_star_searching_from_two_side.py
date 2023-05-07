@@ -42,7 +42,19 @@ def gcost(fixed_node, update_node_coordinate):
     return gcost
 
 
-def boundary_and_obstacles(top_vertex, bottom_vertex, obs_number=20, obs_max_len=40):
+def gen_obstacles(top_vertex, bottom_vertex, obs_number=20, obs_max_len=40):
+    obs_list = []
+    for _ in range(obs_number):
+        rand_x = np.random.randint(bottom_vertex[0] + 1, top_vertex[0])
+        rand_y = np.random.randint(bottom_vertex[1] + 1, top_vertex[1])
+        rand_x_len = np.random.randint(1, obs_max_len + 1)
+        rand_y_len = np.random.randint(1, obs_max_len + 1)
+        obs_list.append([rand_x, rand_y, rand_x_len, rand_y_len])
+
+    return np.array(obs_list)  # (num_obs, 4)
+
+
+def boundary_and_obstacles(top_vertex, bottom_vertex, obs_arr):
     """
     :param top_vertex: top right vertex coordinate of boundary
     :param bottom_vertex: bottom left vertex coordinate of boundary
@@ -62,19 +74,19 @@ def boundary_and_obstacles(top_vertex, bottom_vertex, obs_number=20, obs_max_len
     # ! MODIFIED generate random obstacles (rectangular)
     ob_x = []
     ob_y = []
-    for _ in range(obs_number):
-        rand_x = np.random.randint(bottom_vertex[0] + 1, top_vertex[0])
-        rand_y = np.random.randint(bottom_vertex[1] + 1, top_vertex[1])
-        rand_x_len = np.random.randint(1, obs_max_len + 1)
-        rand_y_len = np.random.randint(1, obs_max_len + 1)
-        for i in range(0, rand_x_len):
-            if rand_x + i > top_vertex[0]:
+    for obs in list(obs_arr):
+        x = obs[0]
+        y = obs[1]
+        x_len = obs[2]
+        y_len = obs[3]
+        for i in range(0, x_len):
+            if x + i > top_vertex[0]:
                 break
-            for j in range(0, rand_y_len):
-                if rand_y + j > top_vertex[1]:
+            for j in range(0, y_len):
+                if y + j > top_vertex[1]:
                     break
-                ob_x.append(rand_x + i)
-                ob_y.append(rand_y + j)
+                ob_x.append(x + i)
+                ob_y.append(y + j)
 
     # x y coordinate in certain order for boundary
     x = ax + bx + cx + dx
@@ -367,9 +379,11 @@ def main(obstacle_number=20, obs_max_len=40):
     top_vertex = [200, 200]  # top right vertex of boundary
     bottom_vertex = [0, 0]  # bottom left vertex of boundary
 
+    obs_arr = gen_obstacles(top_vertex, bottom_vertex, obstacle_number, obs_max_len)
+
     # generate boundary and obstacles
     bound, obstacle, ob_x, ob_y = boundary_and_obstacles(
-        top_vertex, bottom_vertex, obstacle_number, obs_max_len
+        top_vertex, bottom_vertex, obs_arr
     )
 
     # generate start and goal point randomly
@@ -383,6 +397,14 @@ def main(obstacle_number=20, obs_max_len=40):
     path = searching_control(start, end, bound, obstacle)
     if not show_animation:
         print(path)
+        
+def gen_one_image(height=200, width=200, obstacle_number=20, obs_max_len=40):
+    """
+    Return
+        obs_arr: [[x, y, x_len, y_len], ...]
+        image: (h, w) 0=empty 1=on-path 2=on-obstacle 3=start-point 4=end-point
+    """
+    pass
 
 
 if __name__ == "__main__":
