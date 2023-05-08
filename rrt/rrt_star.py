@@ -7,8 +7,9 @@ author: Atsushi Sakai(@Atsushi_twi)
 """
 
 import math
-import matplotlib
-matplotlib.use("TKAgg")
+# add these two lines on Windows
+# import matplotlib
+# matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
 from rrt import RRT

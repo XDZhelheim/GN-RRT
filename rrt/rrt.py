@@ -9,8 +9,9 @@ author: AtsushiSakai(@Atsushi_twi)
 import math
 import random
 
-import matplotlib
-matplotlib.use("TKAgg")
+# add these two lines on Windows
+# import matplotlib
+# matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -279,14 +280,16 @@ def main(gx=6.0, gy=10.0):
         print("found path!!")
 
         # Draw final path
-        if show_animation:
+        if draw_final:
             rrt.draw_graph()
             plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
             plt.grid(True)
             plt.pause(0.01)  # Need for Mac
+            plt.savefig("../images/temp_rrt.png", dpi=300, bbox_inches="tight")
             plt.show()
 
 
 if __name__ == '__main__':
-    show_animation = True
+    show_animation = False
+    draw_final = True
     main()

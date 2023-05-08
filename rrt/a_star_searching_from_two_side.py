@@ -6,9 +6,10 @@ searching path from start and end simultaneously
 """
 
 import numpy as np
-import matplotlib
 
-matplotlib.use("TKAgg")
+# add these two lines on Windows
+# import matplotlib
+# matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import math
 
@@ -397,7 +398,8 @@ def main(obstacle_number=20, obs_max_len=40):
     path = searching_control(start, end, bound, obstacle)
     if not show_animation:
         print(path)
-        
+
+
 def gen_one_image(height=200, width=200, obstacle_number=20, obs_max_len=40):
     """
     Return
@@ -408,5 +410,5 @@ def gen_one_image(height=200, width=200, obstacle_number=20, obs_max_len=40):
 
 
 if __name__ == "__main__":
-    show_animation = True
+    show_animation = False
     main(obstacle_number=20, obs_max_len=40)

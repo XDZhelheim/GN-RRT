@@ -3,15 +3,16 @@
 Path planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
 
 author: AtsushiSakai(@Atsushi_twi)
+modification: Zheng Dong
 
 """
 
 import math
 import random
 
-import matplotlib
-
-matplotlib.use("TKAgg")
+# add these two lines on Windows
+# import matplotlib
+# matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -50,8 +51,8 @@ class GridRRT:
         goal,
         obstacle_list,
         rand_area,
-        expand_dis=6,
-        path_resolution=2,
+        expand_dis=5,
+        path_resolution=1,
         goal_sample_rate=5,
         max_iter=500,
         play_area=None,
@@ -155,9 +156,10 @@ class GridRRT:
             delta_y = self.path_resolution * math.sin(theta)
             new_node.x += delta_x
             new_node.y += delta_y
-            if delta_x > 1 or delta_y > 1:
-                new_node.path_x.append(int(new_node.x))
-                new_node.path_y.append(int(new_node.y))
+            # ! path_x path_y 貌似只在画图时用了 不影响最终结果路径
+            # ! 如果在这里强转 int 则画出来的树有断裂
+            new_node.path_x.append(new_node.x)
+            new_node.path_y.append(new_node.y)
 
         d, _ = self.calc_distance_and_angle(new_node, to_node)
         if d <= self.path_resolution:
@@ -320,22 +322,24 @@ def main(gx, gy):
     e = time.time()
 
     print(f"num_iter = {num_iter}")
-    print("time: {:.2f} s".format(e - s))
+    print("time: {:.8f} s".format(e - s))
     if path is None:
         print("Cannot find path")
     else:
         print(np.array(path))
 
         # Draw final path
-        if show_animation:
+        if draw_final:
             rrt.draw_graph()
             plt.plot([x for (x, y) in path], [y for (x, y) in path], "-r")
             plt.grid(True)
             plt.pause(0.01)  # Need for Mac
+            plt.savefig("../images/temp_grid_rrt.png", dpi=300, bbox_inches="tight")
             plt.show()
 
 
 if __name__ == "__main__":
     DEBUG = False
-    show_animation = True
+    show_animation = False
+    draw_final = True
     main(gx=100, gy=100)
