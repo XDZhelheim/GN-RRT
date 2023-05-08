@@ -2,8 +2,8 @@ import torch
 import numpy as np
 from .utils import print_log, StandardScaler
 
-# x: (samples, num_grid_w, num_grid_h, 2)
-# y: (samples, num_grid_w, num_grid_h, 1)
+# x: (samples, num_grid_h, num_grid_w, 2)
+# y: (samples, num_grid_h, num_grid_w, 1)
 
 
 def get_dataloaders_from_tvt(

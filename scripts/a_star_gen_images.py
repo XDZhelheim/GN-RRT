@@ -403,7 +403,7 @@ def main(obstacle_number=20, obs_max_len=40):
 
 
 def gen_one_image_and_paths(
-    width=200, height=200, obstacle_number=20, obs_max_len=40, num_paths=20
+    height=200, width=200, obstacle_number=20, obs_max_len=40, num_paths=20
 ):
     """
     Returns
@@ -411,7 +411,7 @@ def gen_one_image_and_paths(
         obs_arr: (obs_number, 4) [[x, y, x_len, y_len], ...]
         paths: (num_paths, path_len(not const), 2)
     """
-    top_vertex = [width, height]
+    top_vertex = [height, width]
     bottom_vertex = [0, 0]
 
     obs_arr = gen_obstacles(top_vertex, bottom_vertex, obstacle_number, obs_max_len)
@@ -419,7 +419,7 @@ def gen_one_image_and_paths(
         top_vertex, bottom_vertex, obs_arr
     )
 
-    image = np.zeros((width, height))
+    image = np.zeros((height, width))
     for x, y in zip(ob_x, ob_y):
         image[x, y] = 1
 
@@ -442,15 +442,15 @@ def gen_one_image_and_paths(
 
 def gen_images(
     num_images=500,
-    width=200,
     height=200,
+    width=200,
     obstacle_number=20,
     obs_max_len=40,
     num_paths=20,
 ):
     """
     Returns
-        image: (n, w, h)
+        image: (n, h, w)
         obs_arr: (n, obs_number, 4)
         paths: (n, num_paths, path_len(not const), 2) !!this is not a matrix
     """
@@ -459,7 +459,7 @@ def gen_images(
     obs_list = []
     for _ in tqdm(range(num_images)):
         image, paths, obs_arr = gen_one_image_and_paths(
-            width, height, obstacle_number, obs_max_len, num_paths
+            height, width, obstacle_number, obs_max_len, num_paths
         )
         image_list.append(image)
         path_list.append(paths)
@@ -498,5 +498,5 @@ def gen_images(
 
 if __name__ == "__main__":
     show_animation = False
-    main(obstacle_number=20, obs_max_len=40)
-    # gen_images(num_images=500, num_paths=20)  # total n*p images
+    # main(obstacle_number=20, obs_max_len=40)
+    gen_images(num_images=2500, num_paths=20)  # total n*p images

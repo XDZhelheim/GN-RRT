@@ -1,12 +1,12 @@
 import numpy as np
 
-# x: (n*p, num_grid_w, num_grid_h, channels)
-# y: (n*p, num_grid_w, num_grid_h) 在路径的点占整个grid里点的比例+在路径的点占整个路径里点的比例
+# x: (n*p, num_grid_h, num_grid_w, channels)
+# y: (n*p, num_grid_h, num_grid_w) 在路径的点占整个grid里点的比例+在路径的点占整个路径里点的比例
 
 
-def gen_grid_xy(images, paths, num_grid_w=20, num_grid_h=20):
+def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
     """
-    images: (n, w, h)
+    images: (n, h, w)
     paths: (n, num_paths, path_len(not const), 2) !!this is not a matrix
 
     will generate n*p samples, n=num_images, p=num_paths
@@ -18,8 +18,8 @@ def gen_grid_xy(images, paths, num_grid_w=20, num_grid_h=20):
     num_images = images.shape[0]
     num_paths = len(paths[0])
 
-    x = np.zeros((num_images, num_paths, num_grid_w, num_grid_h, 2))
-    y = np.zeros((num_images, num_paths, num_grid_w, num_grid_h))
+    x = np.zeros((num_images, num_paths, num_grid_h, num_grid_w, 2))
+    y = np.zeros((num_images, num_paths, num_grid_h, num_grid_w))
     for i in range(num_images):
         image = images[i]
 
@@ -27,35 +27,35 @@ def gen_grid_xy(images, paths, num_grid_w=20, num_grid_h=20):
         for idxx in range(image.shape[0]):
             for idxy in range(image.shape[1]):
                 if image[idxx, idxy] == 1:
-                    x[i, :, idxx // num_grid_w, idxy // num_grid_h, 0] += 1
-        x[i, :, :, :, 0] /= num_grid_w * num_grid_h
+                    x[i, :, idxx // num_grid_h, idxy // num_grid_w, 0] += 1
+        x[i, :, :, :, 0] /= num_grid_h * num_grid_w
 
         path_list = paths[i]
         for j in range(len(path_list)):
             path = path_list[j]  # (path_len, 2)
             # 标记起点格 终点格
-            x[i, j, path[0][0] // num_grid_w, path[0][1] // num_grid_h, 1] = 1
-            x[i, j, path[-1][0] // num_grid_w, path[-1][1] // num_grid_h, 1] = 1
-            
+            x[i, j, path[0][0] // num_grid_h, path[0][1] // num_grid_w, 1] = 1
+            x[i, j, path[-1][0] // num_grid_h, path[-1][1] // num_grid_w, 1] = 1
+
             for point in path:
-                y[i, j, point[0] // num_grid_w, point[1] // num_grid_h] += 1
+                y[i, j, point[0] // num_grid_h, point[1] // num_grid_w] += 1
             # 计算 y
-            y[i, j] = y[i, j] / (num_grid_w * num_grid_h) + y[i, j] / len(path)
+            y[i, j] = y[i, j] / (num_grid_h * num_grid_w) + y[i, j] / len(path)
 
     print("x:", x.shape)
     print("y:", y.shape)
 
-    x = x.reshape(num_images * num_paths, num_grid_w, num_grid_h, 2)
-    y = y.reshape(num_images * num_paths, num_grid_w, num_grid_h)
+    x = x.reshape(num_images * num_paths, num_grid_h, num_grid_w, 2)
+    y = y.reshape(num_images * num_paths, num_grid_h, num_grid_w)
 
     return x, y
 
 
-def gen_grid_dataset(n, p, num_grid_w=20, num_grid_h=20, train_size=0.7, val_size=0.1):
+def gen_grid_dataset(n, p, num_grid_h=20, num_grid_w=20, train_size=0.7, val_size=0.1):
     images = np.load(f"../data/n_{n}_p_{p}/image_{n}_{p}.npz")["data"]
     paths = np.load(f"../data/n_{n}_p_{p}/path_{n}_{p}.npz", allow_pickle=True)["data"]
 
-    x, y = gen_grid_xy(images, paths, num_grid_w, num_grid_h)
+    x, y = gen_grid_xy(images, paths, num_grid_h, num_grid_w)
 
     num_samples = x.shape[0]
     split1 = int(num_samples * train_size)
@@ -85,6 +85,7 @@ def gen_grid_dataset(n, p, num_grid_w=20, num_grid_h=20, train_size=0.7, val_siz
     np.savez_compressed(
         f"../data/n_{n}_p_{p}/test_{n}_{p}.npz", x_test=x_test, y_test=y_test
     )
-    
+
+
 if __name__ == "__main__":
-    gen_grid_dataset(n=20, p=10)
+    gen_grid_dataset(n=500, p=20)
