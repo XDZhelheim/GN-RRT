@@ -12,6 +12,8 @@ import numpy as np
 # matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import math
+import os
+from tqdm import tqdm
 
 
 class Node:
@@ -81,10 +83,10 @@ def boundary_and_obstacles(top_vertex, bottom_vertex, obs_arr):
         x_len = obs[2]
         y_len = obs[3]
         for i in range(0, x_len):
-            if x + i > top_vertex[0]:
+            if x + i > top_vertex[0] - 1:
                 break
             for j in range(0, y_len):
-                if y + j > top_vertex[1]:
+                if y + j > top_vertex[1] - 1:
                     break
                 ob_x.append(x + i)
                 ob_y.append(y + j)
@@ -295,7 +297,7 @@ def draw_control(org_closed, goal_closed, flag, start, end, bound, obstacle):
         if node_intersect:  # a path is find
             path = get_path(org_closed, goal_closed, node_intersect[0])
             stop_loop = 1
-            print("Path found!")
+            # print("Path found!")
             if show_animation:  # draw the path
                 plt.plot(path[:, 0], path[:, 1], "-r")
                 plt.title("Robot Arrived", size=20, loc="center")
@@ -400,15 +402,101 @@ def main(obstacle_number=20, obs_max_len=40):
         print(path)
 
 
-def gen_one_image(height=200, width=200, obstacle_number=20, obs_max_len=40):
+def gen_one_image_and_paths(
+    height=200, width=200, obstacle_number=20, obs_max_len=40, num_paths=20
+):
     """
-    Return
-        obs_arr: [[x, y, x_len, y_len], ...]
-        image: (h, w) 0=empty 1=on-path 2=on-obstacle 3=start-point 4=end-point
+    Returns
+        image: (h, w) 0=empty 1=on-obstacle
+        obs_arr: (obs_number, 4) [[x, y, x_len, y_len], ...]
+        paths: (num_paths, path_len(not const), 2)
     """
-    pass
+    top_vertex = [width, height]
+    bottom_vertex = [0, 0]
+
+    obs_arr = gen_obstacles(top_vertex, bottom_vertex, obstacle_number, obs_max_len)
+    bound, obstacle, ob_x, ob_y = boundary_and_obstacles(
+        top_vertex, bottom_vertex, obs_arr
+    )
+
+    image = np.zeros((width, height))
+    for x, y in zip(ob_x, ob_y):
+        image[x, y] = 1
+
+    paths = []
+    for _ in tqdm(range(num_paths), leave=False):
+        path = []
+        while len(path) == 0:
+            start = random_coordinate(bottom_vertex, top_vertex)
+            end = random_coordinate(bottom_vertex, top_vertex)
+            while start[0] in ob_x and start[1] in ob_y:
+                start = random_coordinate(bottom_vertex, top_vertex)
+            while end[0] in ob_x and end[1] in ob_y:
+                end = random_coordinate(bottom_vertex, top_vertex)
+
+            path = searching_control(start, end, bound, obstacle)
+        paths.append(path)
+
+    return image, paths, obs_arr
+
+
+def gen_images(
+    num_images=500,
+    height=200,
+    width=200,
+    obstacle_number=20,
+    obs_max_len=40,
+    num_paths=20,
+):
+    """
+    Returns
+        image: (n, h, w)
+        obs_arr: (n, obs_number, 4)
+        paths: (n, num_paths, path_len(not const), 2) !!this is not a matrix
+    """
+    image_list = []
+    path_list = []
+    obs_list = []
+    for _ in tqdm(range(num_images)):
+        image, paths, obs_arr = gen_one_image_and_paths(
+            height, width, obstacle_number, obs_max_len, num_paths
+        )
+        image_list.append(image)
+        path_list.append(paths)
+        obs_list.append(obs_arr)
+
+    image_list = np.array(image_list)
+    path_list = np.array(path_list, dtype=object)
+    obs_list = np.array(obs_list)
+
+    print(image_list.shape)
+    print(obs_list.shape)
+    print(len(path_list))
+    print(len(path_list[0]))
+    print(len(path_list[0][0]))
+    print(len(path_list[0][1]))
+    print(len(path_list[0][0][0]))
+
+    if not os.path.exists("../data"):
+        os.makedirs("../data")
+    if not os.path.exists(f"../data/n_{num_images}_p_{num_paths}"):
+        os.makedirs(f"../data/n_{num_images}_p_{num_paths}")
+
+    np.savez_compressed(
+        f"../data/n_{num_images}_p_{num_paths}/image_{num_images}_{num_paths}.npz",
+        data=image_list,
+    )
+    np.savez_compressed(
+        f"../data/n_{num_images}_p_{num_paths}/obs_{num_images}_{num_paths}.npz",
+        data=obs_list,
+    )
+    np.savez_compressed(
+        f"../data/n_{num_images}_p_{num_paths}/path_{num_images}_{num_paths}.npz",
+        data=path_list,
+    )
 
 
 if __name__ == "__main__":
     show_animation = False
-    main(obstacle_number=20, obs_max_len=40)
+    # main(obstacle_number=20, obs_max_len=40)
+    gen_images(num_images=500, num_paths=20)  # total n*p images
