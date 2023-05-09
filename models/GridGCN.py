@@ -54,7 +54,7 @@ class GridGCN(nn.Module):
         hidden_dim=32,
         grid_embedding_dim=16,
         cheb_k=3,
-        num_layers=1,
+        num_layers=3,
     ):
         super().__init__()
 

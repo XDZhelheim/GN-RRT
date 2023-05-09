@@ -23,11 +23,12 @@ import sys
 sys.path.append("..")
 from lib.utils import seed_everything
 from gen_dataset import gen_grid_xy
+from models.GridGCN import GridGCN
 
 
 def softmax(x):
     temp = np.exp(x - np.max(x))
-    f_x = temp / np.sum(np.exp(x))
+    f_x = temp / temp.sum()
     return f_x
 
 
@@ -69,7 +70,7 @@ class GridRRT:
         goal_sample_rate=5,
         max_iter=500,
         play_area=None,
-        model_pred=None,
+        model_pred=[],
     ):
         """
         Setting Parameter
@@ -98,7 +99,7 @@ class GridRRT:
         self.node_list = []
 
         self.model_pred = model_pred
-        if model_pred:
+        if len(model_pred) > 0:
             self.nh, self.nw = model_pred.shape
             self.gh, self.gw = (
                 self.play_area.xmax // self.nh,
@@ -108,6 +109,15 @@ class GridRRT:
     def set_start_end(self, start, end):
         self.start = self.Node(start[0], start[1])
         self.end = self.Node(end[0], end[1])
+
+    def set_model_pred(self, model_pred):
+        self.model_pred = model_pred
+        if len(model_pred) > 0:
+            self.nh, self.nw = model_pred.shape
+            self.gh, self.gw = (
+                self.play_area.xmax // self.nh,
+                self.play_area.ymax // self.nw,
+            )
 
     def planning(self, animation=True):
         """
@@ -219,7 +229,9 @@ class GridRRT:
 
     def get_random_node(self, cur_node: Node):
         # ! use model_pred to guide sampling
-        if not self.model_pred:
+        if len(self.model_pred) > 0:
+            rnd = self.get_random_node_by_model(cur_node)
+        else:
             if random.randint(0, 100) > self.goal_sample_rate:
                 rnd = self.Node(
                     random.randint(self.min_rand, self.max_rand),
@@ -227,8 +239,6 @@ class GridRRT:
                 )
             else:  # goal point sampling
                 rnd = self.Node(self.end.x, self.end.y)
-        else:
-            rnd = self.get_random_node_by_model(cur_node)
         return rnd
 
     def get_random_node_by_model(self, cur_node: Node):
@@ -236,10 +246,16 @@ class GridRRT:
         cur_grid_y = cur_node.y // self.gw
 
         # 以当前点的九宫格
-        prob = np.zeros((3, 3)) # TODO 边界检查
-        prob = self.model_pred[
-            cur_grid_x - 1 : cur_grid_x + 2, cur_grid_y - 1 : cur_grid_y + 2
-        ]
+        prob = -np.ones((3, 3)) * np.inf
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if (
+                    cur_grid_x + i >= 0
+                    and cur_grid_x + i < self.nh
+                    and cur_grid_y + j >= 0
+                    and cur_grid_y + j < self.nw
+                ):
+                    prob[i + 1, j + 1] = self.model_pred[cur_grid_x + i, cur_grid_y + j]
         prob = softmax(prob)
 
         # 按预测值加权随机挑选一个格子
@@ -251,16 +267,21 @@ class GridRRT:
                 prob_sum += prob[i, j]
                 if prob_sum > rand_number:
                     found = True
+                    delta_x = i
+                    delta_y = j
                     break
             if found:
                 break
 
         # 坐标转换
-        i -= 1
-        j -= 1
+        delta_x -= 1
+        delta_y -= 1
 
-        chosen_grid_x = cur_grid_x + i
-        chosen_grid_y = cur_grid_y + j
+        chosen_grid_x = cur_grid_x + delta_x
+        chosen_grid_y = cur_grid_y + delta_y
+
+        assert chosen_grid_x >= 0 and chosen_grid_x < self.nh, chosen_grid_x
+        assert chosen_grid_y >= 0 and chosen_grid_y < self.nw, chosen_grid_y
 
         rand_x_min = chosen_grid_x * self.gh
         rand_x_max = rand_x_min + self.gh
@@ -424,6 +445,7 @@ def rrt(gx, gy):
             plt.show()
 
 
+@torch.no_grad()
 def test_image_dataset(
     n=300,
     p=20,
@@ -457,8 +479,8 @@ def test_image_dataset(
     obss = np.load(f"../data/n_{n}_p_{p}/obs_{n}_{p}.npz")["data"]
 
     if model:
-        x_test, _ = gen_grid_xy(images, paths, num_grid_h=nh, num_grid_w=nw).to(
-            DEVICE
+        x_test, _ = gen_grid_xy(
+            images, paths, num_grid_h=nh, num_grid_w=nw
         )  # (n*p, nh, nw, num_channels)
         model = model.to(DEVICE)
         model.eval()
@@ -500,7 +522,7 @@ def test_image_dataset(
             rrt.set_start_end(start_point, end_point)
 
             if model:
-                rrt.model_pred = pred[n, p]  # (nh, nw)
+                rrt.set_model_pred(pred[idx_n, idx_p])  # (nh, nw)
 
             s = time.time()
             path, num_iter = rrt.planning(animation=False)
@@ -540,5 +562,13 @@ if __name__ == "__main__":
     draw_final = True
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    model_param_path = (
+        "../saved_models/GridGCN/GridGCN-n_500_p_20-2023-05-09-17-04-10.pt"
+    )
+
+    model = GridGCN(device=DEVICE)
+    model.load_state_dict(torch.load(model_param_path))
+    model = model.to(DEVICE)
+
     draw_list = [[0, 1], [2, 3]]
-    test_image_dataset(n=20, p=10, draw_list=draw_list, model=None)
+    test_image_dataset(n=20, p=10, draw_list=draw_list, model=model)
