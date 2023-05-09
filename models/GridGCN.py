@@ -188,6 +188,6 @@ class GridGCN(nn.Module):
 
 
 if __name__ == "__main__":
-    model = GridGCN(device=torch.device("cpu"), num_layers=3, grid_embedding_dim=0)
+    model = GridGCN(device=torch.device("cpu"), num_layers=3, grid_embedding_dim=16)
     summary(model, [64, 20, 20, 3], device="cpu")
     # print(model.gen_adj(3, 3))

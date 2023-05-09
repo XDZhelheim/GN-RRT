@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from .utils import print_log, StandardScaler
 
-# x: (samples, num_grid_h, num_grid_w, 2)
+# x: (samples, num_grid_h, num_grid_w, num_channels)
 # y: (samples, num_grid_h, num_grid_w, 1)
 
 

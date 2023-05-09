@@ -16,6 +16,13 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import torch
+import os
+import sys
+
+sys.path.append("..")
+from lib.utils import seed_everything
+from gen_dataset import gen_grid_xy
 
 
 class GridRRT:
@@ -47,15 +54,16 @@ class GridRRT:
 
     def __init__(
         self,
-        start,
-        goal,
-        obstacle_list,
-        rand_area,
+        start=None,
+        goal=None,
+        obstacle_list=None,
+        rand_area=None,
         expand_dis=5,
         path_resolution=1,
         goal_sample_rate=5,
         max_iter=500,
         play_area=None,
+        model_pred=None,
     ):
         """
         Setting Parameter
@@ -67,8 +75,9 @@ class GridRRT:
         play_area:stay inside this area [xmin,xmax,ymin,ymax]
 
         """
-        self.start = self.Node(start[0], start[1])
-        self.end = self.Node(goal[0], goal[1])
+        if start and goal:
+            self.set_start_end(start, goal)
+
         self.min_rand = rand_area[0]
         self.max_rand = rand_area[1]
         if play_area is not None:
@@ -81,6 +90,12 @@ class GridRRT:
         self.max_iter = max_iter
         self.obstacle_list = obstacle_list
         self.node_list = []
+
+        self.model_pred = model_pred
+
+    def set_start_end(self, start, end):
+        self.start = self.Node(start[0], start[1])
+        self.end = self.Node(end[0], end[1])
 
     def planning(self, animation=True):
         """
@@ -191,13 +206,17 @@ class GridRRT:
         return math.hypot(dx, dy)
 
     def get_random_node(self):
-        if random.randint(0, 100) > self.goal_sample_rate:
-            rnd = self.Node(
-                random.randint(self.min_rand, self.max_rand),
-                random.randint(self.min_rand, self.max_rand),
-            )
-        else:  # goal point sampling
-            rnd = self.Node(self.end.x, self.end.y)
+        # ! use model_pred to guide sampling
+        if not self.model_pred:
+            if random.randint(0, 100) > self.goal_sample_rate:
+                rnd = self.Node(
+                    random.randint(self.min_rand, self.max_rand),
+                    random.randint(self.min_rand, self.max_rand),
+                )
+            else:  # goal point sampling
+                rnd = self.Node(self.end.x, self.end.y)
+        else:
+            pass
         return rnd
 
     def draw_graph(self, rnd=None):
@@ -214,9 +233,19 @@ class GridRRT:
                 plt.plot(node.path_x, node.path_y, "-g")
 
         for obs_x, obs_y, obs_x_len, obs_y_len in self.obstacle_list:
+            xmax = (
+                obs_x + obs_x_len
+                if obs_x + obs_x_len < self.play_area.xmax
+                else self.play_area.xmax
+            )
+            ymax = (
+                obs_y + obs_y_len
+                if obs_y + obs_y_len < self.play_area.ymax
+                else self.play_area.ymax
+            )
             plt.fill(
-                [obs_x, obs_x + obs_x_len, obs_x + obs_x_len, obs_x],
-                [obs_y, obs_y, obs_y + obs_y_len, obs_y + obs_y_len],
+                [obs_x, xmax, xmax, obs_x],
+                [obs_y, obs_y, ymax, ymax],
                 "black",
             )
 
@@ -297,10 +326,10 @@ class GridRRT:
         return d, theta
 
 
-def main(gx, gy):
+def rrt(gx, gy):
     print("start " + __file__)
 
-    # 所有障碍物都是长方形 [x, y, x_len, y_len] xy是长方形左下角坐标
+    # 所有障碍物都是长方形 [x, y, x_len, y_len] xy是长方形起始点坐标
     obstacleList = [
         [10, 10, 10, 10],
         [10, 20, 5, 5],
@@ -332,14 +361,129 @@ def main(gx, gy):
         if draw_final:
             rrt.draw_graph()
             plt.plot([x for (x, y) in path], [y for (x, y) in path], "-r")
+            plt.xticks(np.arange(0, 200 + 20, step=20))
+            plt.yticks(np.arange(0, 200 + 20, step=20))
             plt.grid(True)
             plt.pause(0.01)  # Need for Mac
             plt.savefig("../images/temp_grid_rrt.png", dpi=300, bbox_inches="tight")
             plt.show()
 
 
+def test_image_dataset(
+    n=300,
+    p=20,
+    h=200,
+    w=200,
+    nh=20,
+    nw=20,
+    model=None,
+    batch_size=32,
+    max_iter=200,
+    draw_list=None,
+):
+    if draw_list:
+        image_path = f"../images/n_{n}_p_{p}"
+        if not os.path.exists(image_path):
+            os.makedirs(image_path)
+    if model:
+        image_path = os.path.join(image_path, "nrrt")
+        if not os.path.exists(image_path):
+            os.makedirs(image_path)
+    else:
+        image_path = os.path.join(image_path, "rrt")
+        if not os.path.exists(image_path):
+            os.makedirs(image_path)
+
+    # images: (n, h, w)
+    # obss: (n, obs_number, 4)
+    # paths: (n, num_paths, path_len(not const), 2)
+    images = np.load(f"../data/n_{n}_p_{p}/image_{n}_{p}.npz")["data"]
+    paths = np.load(f"../data/n_{n}_p_{p}/path_{n}_{p}.npz", allow_pickle=True)["data"]
+    obss = np.load(f"../data/n_{n}_p_{p}/obs_{n}_{p}.npz")["data"]
+
+    if model:
+        x_test, _ = gen_grid_xy(images, paths, num_grid_h=nh, num_grid_w=nw).to(
+            DEVICE
+        )  # (n*p, nh, nw, num_channels)
+        model = model.to(DEVICE)
+        model.eval()
+
+        testset = torch.utils.data.TensorDataset(
+            torch.FloatTensor(x_test), torch.zeros(size=x_test.shape)
+        )
+        testloader = torch.utils.data.DataLoader(
+            testset, batch_size=batch_size, shuffle=False
+        )
+
+        out = []
+        for x_batch, _ in testloader:
+            x_batch = x_batch.to(DEVICE)
+            out_batch = model(x_batch)
+
+            out_batch = out_batch.cpu().numpy()
+            out.append(out_batch)
+        pred = np.vstack(out).squeeze()  # (n*p, nh, nw)
+        pred = pred.reshape(n, p, nh, nw)
+
+    rrt = GridRRT(
+        rand_area=[0, max(h, w)],
+        play_area=[0, h, 0, w],
+        max_iter=max_iter,
+    )
+
+    time_all = 0
+    iter_all = 0
+    succ_all = 0
+    for idx_n in range(n):
+        obs_list = obss[idx_n]
+        rrt.obstacle_list = obs_list
+        for idx_p in range(p):
+            a_star_path = paths[idx_n, idx_p]
+            start_point = a_star_path[0]
+            end_point = a_star_path[-1]
+
+            rrt.set_start_end(start_point, end_point)
+
+            if model:
+                rrt.model_pred = pred[n, p]  # (nh, nw)
+
+            s = time.time()
+            path, num_iter = rrt.planning(animation=False)
+            e = time.time()
+
+            time_all += e - s
+            iter_all += num_iter
+            if path:
+                succ_all += 1
+
+            if [idx_n, idx_p] in draw_list and path:
+                print("Draw", idx_n, idx_p)
+                rrt.draw_graph()
+                plt.plot([x for (x, y) in path], [y for (x, y) in path], "-r")
+                plt.xticks(np.arange(0, h + nh, step=nh))
+                plt.yticks(np.arange(0, w + nw, step=nw))
+                plt.grid(True)
+                plt.savefig(
+                    os.path.join(image_path, f"{idx_n}_{idx_p}.png"),
+                    dpi=300,
+                    bbox_inches="tight",
+                )
+
+    time_avg = time_all / (n * p)
+    iter_avg = iter_all / (n * p)
+    succ_rate = succ_all / (n * p)
+
+    print("Avg time:", time_avg)
+    print("Avg iters:", iter_avg)
+    print("Success rate:", succ_rate)
+
+
 if __name__ == "__main__":
+    seed_everything(233)
     DEBUG = False
     show_animation = False
     draw_final = True
-    main(gx=100, gy=100)
+    DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    draw_list = [[0, 1], [2, 3]]
+    test_image_dataset(n=20, p=10, draw_list=draw_list, model=None)
