@@ -25,6 +25,12 @@ from lib.utils import seed_everything
 from gen_dataset import gen_grid_xy
 
 
+def softmax(x):
+    temp = np.exp(x - np.max(x))
+    f_x = temp / np.sum(np.exp(x))
+    return f_x
+
+
 class GridRRT:
     """
     Class for RRT planning
@@ -92,6 +98,12 @@ class GridRRT:
         self.node_list = []
 
         self.model_pred = model_pred
+        if model_pred:
+            self.nh, self.nw = model_pred.shape
+            self.gh, self.gw = (
+                self.play_area.xmax // self.nh,
+                self.play_area.ymax // self.nw,
+            )
 
     def set_start_end(self, start, end):
         self.start = self.Node(start[0], start[1])
@@ -106,7 +118,7 @@ class GridRRT:
 
         self.node_list = [self.start]
         for i in range(self.max_iter):
-            rnd_node = self.get_random_node()  # (int, int)
+            rnd_node = self.get_random_node(cur_node=self.node_list[-1])  # (int, int)
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd_node)
             nearest_node = self.node_list[nearest_ind]
 
@@ -205,7 +217,7 @@ class GridRRT:
         dy = y - self.end.y
         return math.hypot(dx, dy)
 
-    def get_random_node(self):
+    def get_random_node(self, cur_node: Node):
         # ! use model_pred to guide sampling
         if not self.model_pred:
             if random.randint(0, 100) > self.goal_sample_rate:
@@ -216,7 +228,50 @@ class GridRRT:
             else:  # goal point sampling
                 rnd = self.Node(self.end.x, self.end.y)
         else:
-            pass
+            rnd = self.get_random_node_by_model(cur_node)
+        return rnd
+
+    def get_random_node_by_model(self, cur_node: Node):
+        cur_grid_x = cur_node.x // self.gh
+        cur_grid_y = cur_node.y // self.gw
+
+        # 以当前点的九宫格
+        prob = np.zeros((3, 3)) # TODO 边界检查
+        prob = self.model_pred[
+            cur_grid_x - 1 : cur_grid_x + 2, cur_grid_y - 1 : cur_grid_y + 2
+        ]
+        prob = softmax(prob)
+
+        # 按预测值加权随机挑选一个格子
+        rand_number = random.random()
+        prob_sum = 0
+        found = False
+        for i in range(3):
+            for j in range(3):
+                prob_sum += prob[i, j]
+                if prob_sum > rand_number:
+                    found = True
+                    break
+            if found:
+                break
+
+        # 坐标转换
+        i -= 1
+        j -= 1
+
+        chosen_grid_x = cur_grid_x + i
+        chosen_grid_y = cur_grid_y + j
+
+        rand_x_min = chosen_grid_x * self.gh
+        rand_x_max = rand_x_min + self.gh
+        rand_y_min = chosen_grid_y * self.gw
+        rand_y_max = rand_y_min + self.gw
+
+        rnd = self.Node(
+            random.randint(rand_x_min, rand_x_max),
+            random.randint(rand_y_min, rand_y_max),
+        )
+
         return rnd
 
     def draw_graph(self, rnd=None):

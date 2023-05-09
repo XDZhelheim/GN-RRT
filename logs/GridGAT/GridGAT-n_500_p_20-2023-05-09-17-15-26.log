@@ -77,53 +77,32 @@ Estimated Total Size (MB): 187.45
 
 Loss: MaskedMAELoss
 
-2023-05-09 10:47:19.105043 Epoch 1  	Train Loss = 0.08931 Val Loss = 0.08743
-2023-05-09 10:47:24.995220 Epoch 2  	Train Loss = 0.08498 Val Loss = 0.08815
-2023-05-09 10:47:30.897597 Epoch 3  	Train Loss = 0.08405 Val Loss = 0.08387
-2023-05-09 10:47:36.783839 Epoch 4  	Train Loss = 0.08188 Val Loss = 0.08394
-2023-05-09 10:47:42.660550 Epoch 5  	Train Loss = 0.08207 Val Loss = 0.08454
-2023-05-09 10:47:48.521590 Epoch 6  	Train Loss = 0.08116 Val Loss = 0.08277
-2023-05-09 10:47:54.370355 Epoch 7  	Train Loss = 0.08045 Val Loss = 0.08173
-2023-05-09 10:48:00.251415 Epoch 8  	Train Loss = 0.07884 Val Loss = 0.08178
-2023-05-09 10:48:06.138746 Epoch 9  	Train Loss = 0.07814 Val Loss = 0.07970
-2023-05-09 10:48:11.998761 Epoch 10  	Train Loss = 0.07771 Val Loss = 0.07985
-2023-05-09 10:48:17.867797 Epoch 11  	Train Loss = 0.07622 Val Loss = 0.07885
-2023-05-09 10:48:23.738386 Epoch 12  	Train Loss = 0.07589 Val Loss = 0.07884
-2023-05-09 10:48:29.608658 Epoch 13  	Train Loss = 0.07567 Val Loss = 0.07850
-2023-05-09 10:48:35.518842 Epoch 14  	Train Loss = 0.07584 Val Loss = 0.07835
-2023-05-09 10:48:41.413481 Epoch 15  	Train Loss = 0.07537 Val Loss = 0.07820
-2023-05-09 10:48:47.271981 Epoch 16  	Train Loss = 0.07544 Val Loss = 0.07825
-2023-05-09 10:48:51.847082 Epoch 17  	Train Loss = 0.07526 Val Loss = 0.07839
-2023-05-09 10:48:55.642222 Epoch 18  	Train Loss = 0.07525 Val Loss = 0.07808
-2023-05-09 10:48:59.440050 Epoch 19  	Train Loss = 0.07513 Val Loss = 0.07813
-2023-05-09 10:49:03.369059 Epoch 20  	Train Loss = 0.07499 Val Loss = 0.07805
-2023-05-09 10:49:07.193827 Epoch 21  	Train Loss = 0.07502 Val Loss = 0.07802
-2023-05-09 10:49:10.979390 Epoch 22  	Train Loss = 0.07491 Val Loss = 0.07841
-2023-05-09 10:49:14.961874 Epoch 23  	Train Loss = 0.07480 Val Loss = 0.07818
-2023-05-09 10:49:18.981915 Epoch 24  	Train Loss = 0.07478 Val Loss = 0.07786
-2023-05-09 10:49:22.866656 Epoch 25  	Train Loss = 0.07463 Val Loss = 0.07784
-2023-05-09 10:49:26.747547 Epoch 26  	Train Loss = 0.07449 Val Loss = 0.07777
-2023-05-09 10:49:30.675651 Epoch 27  	Train Loss = 0.07456 Val Loss = 0.07775
-2023-05-09 10:49:34.598145 Epoch 28  	Train Loss = 0.07453 Val Loss = 0.07779
-2023-05-09 10:49:38.488539 Epoch 29  	Train Loss = 0.07443 Val Loss = 0.07768
-2023-05-09 10:49:42.431763 Epoch 30  	Train Loss = 0.07427 Val Loss = 0.07812
-2023-05-09 10:49:46.416465 Epoch 31  	Train Loss = 0.07399 Val Loss = 0.07764
-2023-05-09 10:49:50.430290 Epoch 32  	Train Loss = 0.07385 Val Loss = 0.07765
-2023-05-09 10:49:54.355543 Epoch 33  	Train Loss = 0.07398 Val Loss = 0.07764
-2023-05-09 10:49:58.215204 Epoch 34  	Train Loss = 0.07388 Val Loss = 0.07768
-2023-05-09 10:50:02.157717 Epoch 35  	Train Loss = 0.07381 Val Loss = 0.07767
-2023-05-09 10:50:06.192280 Epoch 36  	Train Loss = 0.07373 Val Loss = 0.07768
-2023-05-09 10:50:10.062393 Epoch 37  	Train Loss = 0.07390 Val Loss = 0.07766
-2023-05-09 10:50:14.065157 Epoch 38  	Train Loss = 0.07389 Val Loss = 0.07765
-2023-05-09 10:50:18.130981 Epoch 39  	Train Loss = 0.07365 Val Loss = 0.07768
-2023-05-09 10:50:21.961386 Epoch 40  	Train Loss = 0.07374 Val Loss = 0.07765
-2023-05-09 10:50:25.838120 Epoch 41  	Train Loss = 0.07373 Val Loss = 0.07766
-Early stopping at epoch: 41
-Best at epoch 31:
-Train Loss = 0.07399
-Train MAE = 0.07320, RMSE = 0.11369
-Val Loss = 0.07764
-Val MAE = 0.07582, RMSE = 0.11774
+2023-05-09 17:15:33.364038 Epoch 1  	Train Loss = 0.06475 Val Loss = 0.06678
+2023-05-09 17:15:37.325057 Epoch 2  	Train Loss = 0.06080 Val Loss = 0.06107
+2023-05-09 17:15:41.185333 Epoch 3  	Train Loss = 0.06012 Val Loss = 0.06079
+2023-05-09 17:15:45.001640 Epoch 4  	Train Loss = 0.05963 Val Loss = 0.06078
+2023-05-09 17:15:48.984015 Epoch 5  	Train Loss = 0.05972 Val Loss = 0.06108
+2023-05-09 17:15:52.894103 Epoch 6  	Train Loss = 0.05942 Val Loss = 0.06096
+2023-05-09 17:15:56.860733 Epoch 7  	Train Loss = 0.05986 Val Loss = 0.06104
+2023-05-09 17:16:00.621467 Epoch 8  	Train Loss = 0.05953 Val Loss = 0.06279
+2023-05-09 17:16:04.613634 Epoch 9  	Train Loss = 0.05896 Val Loss = 0.06038
+2023-05-09 17:16:08.626804 Epoch 10  	Train Loss = 0.05877 Val Loss = 0.05990
+2023-05-09 17:16:12.562979 Epoch 11  	Train Loss = 0.05811 Val Loss = 0.06011
+2023-05-09 17:16:16.105630 Epoch 12  	Train Loss = 0.05807 Val Loss = 0.06003
+2023-05-09 17:16:20.034708 Epoch 13  	Train Loss = 0.05803 Val Loss = 0.06014
+2023-05-09 17:16:23.765455 Epoch 14  	Train Loss = 0.05821 Val Loss = 0.06015
+2023-05-09 17:16:27.644873 Epoch 15  	Train Loss = 0.05798 Val Loss = 0.06009
+2023-05-09 17:16:31.476380 Epoch 16  	Train Loss = 0.05807 Val Loss = 0.06021
+2023-05-09 17:16:35.356094 Epoch 17  	Train Loss = 0.05805 Val Loss = 0.06009
+2023-05-09 17:16:39.097504 Epoch 18  	Train Loss = 0.05812 Val Loss = 0.06008
+2023-05-09 17:16:42.812203 Epoch 19  	Train Loss = 0.05807 Val Loss = 0.06007
+2023-05-09 17:16:46.711670 Epoch 20  	Train Loss = 0.05801 Val Loss = 0.06016
+Early stopping at epoch: 20
+Best at epoch 10:
+Train Loss = 0.05877
+Train MAE = 0.05764, RMSE = 0.08543
+Val Loss = 0.05990
+Val MAE = 0.05919, RMSE = 0.08886
 --------- Test ---------
-Test MAE = 0.07556, RMSE = 0.11626
+Test MAE = 0.05800, RMSE = 0.08466
 Inference time: 0.26 s

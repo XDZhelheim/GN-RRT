@@ -18,9 +18,15 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
     - 到起点的距离 (不好用)
     - 到终点的距离 (不好用)
     """
-    num_images = images.shape[0]
+    num_images, image_height, image_width = images.shape
     num_paths = len(paths[0])
     num_channels = 3
+
+    assert image_height % num_grid_h == 0 and image_width % num_grid_w == 0
+
+    grid_height = image_height // num_grid_h
+    grid_width = image_width // num_grid_w
+    grid_area = grid_height * grid_width
 
     x = np.zeros((num_images, num_paths, num_grid_h, num_grid_w, 3))
     y = np.zeros((num_images, num_paths, num_grid_h, num_grid_w))
@@ -31,8 +37,8 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
         for idxx in range(image.shape[0]):
             for idxy in range(image.shape[1]):
                 if image[idxx, idxy] == 1:
-                    x[i, :, idxx // num_grid_h, idxy // num_grid_w, 0] += 1
-        x[i, :, :, :, 0] /= num_grid_h * num_grid_w
+                    x[i, :, idxx // grid_height, idxy // grid_width, 0] += 1
+        x[i, :, :, :, 0] /= grid_area
 
         path_list = paths[i]
         for j in range(len(path_list)):
@@ -41,8 +47,8 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
             end_point = path[-1]
 
             # 标记起点格 终点格
-            x[i, j, start_point[0] // num_grid_h, start_point[1] // num_grid_w, 1] = 1
-            x[i, j, end_point[0] // num_grid_h, end_point[1] // num_grid_w, 2] = 1
+            x[i, j, start_point[0] // grid_height, start_point[1] // grid_width, 1] = 1
+            x[i, j, end_point[0] // grid_height, end_point[1] // grid_width, 2] = 1
 
             # # 起点终点距离
             # for h in range(num_grid_h):
@@ -51,9 +57,9 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
             #         x[i, j, h, w, 2] = ((h - end_point[0])**2 + (w - end_point[1])**2)**0.5
 
             for point in path:
-                y[i, j, point[0] // num_grid_h, point[1] // num_grid_w] += 1
+                y[i, j, point[0] // grid_height, point[1] // grid_width] += 1
             # 计算 y
-            y[i, j] = y[i, j] / (num_grid_h * num_grid_w) + y[i, j] / len(path)
+            y[i, j] = y[i, j] / grid_area + y[i, j] / len(path)
 
     print("x:", x.shape)
     print("y:", y.shape)
