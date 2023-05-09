@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 # x: (n*p, num_grid_h, num_grid_w, channels)
 # y: (n*p, num_grid_h, num_grid_w) 在路径的点占整个grid里点的比例+在路径的点占整个路径里点的比例
@@ -14,13 +15,16 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
     channels:
     - 障碍物占 grid 比例 (float)
     - 是否为起/终所在的格子 (0 or 1)
+    - 到起点的距离 (不好用)
+    - 到终点的距离 (不好用)
     """
     num_images = images.shape[0]
     num_paths = len(paths[0])
+    num_channels = 3
 
-    x = np.zeros((num_images, num_paths, num_grid_h, num_grid_w, 2))
+    x = np.zeros((num_images, num_paths, num_grid_h, num_grid_w, 3))
     y = np.zeros((num_images, num_paths, num_grid_h, num_grid_w))
-    for i in range(num_images):
+    for i in tqdm(range(num_images)):
         image = images[i]
 
         # 统计每个格子障碍物点数占比
@@ -33,9 +37,18 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
         path_list = paths[i]
         for j in range(len(path_list)):
             path = path_list[j]  # (path_len, 2)
+            start_point = path[0]
+            end_point = path[-1]
+
             # 标记起点格 终点格
-            x[i, j, path[0][0] // num_grid_h, path[0][1] // num_grid_w, 1] = 1
-            x[i, j, path[-1][0] // num_grid_h, path[-1][1] // num_grid_w, 1] = 1
+            x[i, j, start_point[0] // num_grid_h, start_point[1] // num_grid_w, 1] = 1
+            x[i, j, end_point[0] // num_grid_h, end_point[1] // num_grid_w, 2] = 1
+
+            # # 起点终点距离
+            # for h in range(num_grid_h):
+            #     for w in range(num_grid_w):
+            #         x[i, j, h, w, 1] = ((h - start_point[0])**2 + (w - start_point[1])**2)**0.5
+            #         x[i, j, h, w, 2] = ((h - end_point[0])**2 + (w - end_point[1])**2)**0.5
 
             for point in path:
                 y[i, j, point[0] // num_grid_h, point[1] // num_grid_w] += 1
@@ -45,7 +58,7 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
     print("x:", x.shape)
     print("y:", y.shape)
 
-    x = x.reshape(num_images * num_paths, num_grid_h, num_grid_w, 2)
+    x = x.reshape(num_images * num_paths, num_grid_h, num_grid_w, num_channels)
     y = y.reshape(num_images * num_paths, num_grid_h, num_grid_w)
 
     return x, y

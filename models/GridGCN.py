@@ -49,9 +49,10 @@ class GridGCN(nn.Module):
         device,
         num_grids_height=20,
         num_grids_width=20,
-        input_dim=2,
+        input_dim=3,
         output_dim=1,
         hidden_dim=32,
+        grid_embedding_dim=16,
         cheb_k=3,
         num_layers=1,
     ):
@@ -62,16 +63,27 @@ class GridGCN(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.hidden_dim = hidden_dim
+        self.grid_embedding_dim = grid_embedding_dim
         self.cheb_k = cheb_k
         self.num_layers = num_layers
 
         adj = self.gen_adj(num_grids_height, num_grids_width)
         adj = [asym_adj(adj), asym_adj(np.transpose(adj))]
         self.P = self.compute_cheby_poly(adj).to(device)
+        k = self.P.shape[0]
+
+        if grid_embedding_dim > 0:
+            self.grid_emb1 = nn.Parameter(
+                torch.randn(num_grids_height * num_grids_width, grid_embedding_dim)
+            )
+            self.grid_emb2 = nn.Parameter(
+                torch.randn(num_grids_height * num_grids_width, grid_embedding_dim)
+            )
+            k += cheb_k
 
         self.input_proj = nn.Linear(input_dim, hidden_dim)
         self.gcn_list = nn.ModuleList(
-            GCN(dim_in=hidden_dim, dim_out=hidden_dim, cheb_k=self.P.shape[0])
+            GCN(dim_in=hidden_dim, dim_out=hidden_dim, cheb_k=k)
             for _ in range(num_layers)
         )
         self.output_proj = nn.Sequential(
@@ -87,10 +99,24 @@ class GridGCN(nn.Module):
             batch_size, self.num_grids_height * self.num_grids_width, self.input_dim
         )
 
-        x = self.input_proj(x)  # (B, H, W, hidden_dim)
+        supports = [self.P]
+
+        if self.grid_embedding_dim > 0:
+            adp = self.grid_emb1 @ self.grid_emb2.T
+            adp = torch.softmax(torch.relu(adp), dim=-1)  # (H*W, H*W)
+            adps = [adp]
+            for _ in range(self.cheb_k - 1):
+                adp = adp @ adp
+                adps.append(adp)
+            adps = torch.stack(adps)  # (K, H*W, H*W)
+            supports.append(adps)
+
+        supports = torch.concat(supports, dim=0)
+
+        x = self.input_proj(x)  # (B, H*W, hidden_dim)
         for gcn in self.gcn_list:
-            x = gcn(x, self.P)  # (B, H, W, hidden_dim)
-        out = self.output_proj(x)  # (B, H, W, output_dim)
+            x = gcn(x, supports)  # (B, H*W, hidden_dim)
+        out = self.output_proj(x)  # (B, H*W, output_dim)
 
         out = out.view(
             batch_size, self.num_grids_height, self.num_grids_width, self.output_dim
@@ -162,6 +188,6 @@ class GridGCN(nn.Module):
 
 
 if __name__ == "__main__":
-    model = GridGCN(device=torch.device("cpu"), num_layers=3)
-    summary(model, [64, 20, 20, 2], device="cpu")
+    model = GridGCN(device=torch.device("cpu"), num_layers=3, grid_embedding_dim=0)
+    summary(model, [64, 20, 20, 3], device="cpu")
     # print(model.gen_adj(3, 3))

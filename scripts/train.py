@@ -19,7 +19,7 @@ from lib.utils import (
     set_cpu_num,
     CustomJSONEncoder,
 )
-from lib.metrics import MAE_RMSE
+from lib.metrics import MAE_RMSE, RMSE_MAE_MAPE
 from lib.data_prepare import get_dataloaders_from_tvt
 from models import model_select
 
@@ -196,6 +196,13 @@ def test_model(model, testset_loader, log=None):
         rmse_all,
     )
 
+    # (rmse_all, mae_all, mape_all) = RMSE_MAE_MAPE(y_true, y_pred)
+    # out_str = "Test MAE = %.5f, RMSE = %.5f, MAPE = %.5f\n" % (
+    #     rmse_all,
+    #     mae_all,
+    #     mape_all,
+    # )
+
     print_log(out_str, log=log, end="")
     print_log("Inference time: %.2f s" % (end - start), log=log)
 
@@ -302,7 +309,12 @@ if __name__ == "__main__":
     print_log(
         summary(
             model,
-            [cfg["batch_size"], cfg["num_grids_width"], cfg["num_grids_height"], 2],
+            [
+                cfg["batch_size"],
+                cfg["num_grids_width"],
+                cfg["num_grids_height"],
+                cfg["model_args"]["input_dim"],
+            ],
             verbose=0,
         ),
         log=log,

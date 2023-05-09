@@ -7,19 +7,19 @@ n_500_p_20:
   
   lr: 0.001
   weight_decay: 0
-  milestones: [10, 40]
+  milestones: [10, 30, 50]
   clip_grad: 0
   batch_size: 32
   max_epochs: 200
-
-  pass_device: True
 
   model_args:
     num_grids_height: 20
     num_grids_width: 20
     input_dim: 3
     output_dim: 1
-    hidden_dim: 32
-    grid_embedding_dim: 16
-    cheb_k: 3
+    input_embedding_dim: 32
+    grid_embedding_dim: 32
+    feed_forward_dim: 128
+    num_heads: 4
     num_layers: 3
+    dropout: 0
