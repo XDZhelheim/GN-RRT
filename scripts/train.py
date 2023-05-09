@@ -285,7 +285,8 @@ if __name__ == "__main__":
     # ---------------------- set loss, optimizer, scheduler ---------------------- #
 
     # criterion = nn.SmoothL1Loss()
-    criterion = MaskedMAELoss()
+    # criterion = MaskedMAELoss()
+    criterion = nn.MSELoss()
 
     optimizer = torch.optim.Adam(
         model.parameters(),

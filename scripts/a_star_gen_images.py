@@ -3,6 +3,8 @@ A* algorithm
 Author: Weicent
 randomly generate obstacles, start and goal point
 searching path from start and end simultaneously
+
+Modification: Zheng Dong
 """
 
 import numpy as np

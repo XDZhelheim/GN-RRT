@@ -4,6 +4,11 @@ from tqdm import tqdm
 # x: (n*p, num_grid_h, num_grid_w, channels)
 # y: (n*p, num_grid_h, num_grid_w) 在路径的点占整个grid里点的比例+在路径的点占整个路径里点的比例
 
+# ! 更新: 不计算占比了, 直接统计数量
+# 统计占比 + MAELoss: 不太行, MAE 倾向于预测均值
+#   所以预测出来每个格子的 y_pred 几乎一样 没有区分性
+# 改成统计数量 + MSELoss
+
 
 def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
     """
@@ -38,7 +43,7 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
             for idxy in range(image.shape[1]):
                 if image[idxx, idxy] == 1:
                     x[i, :, idxx // grid_height, idxy // grid_width, 0] += 1
-        x[i, :, :, :, 0] /= grid_area
+        # x[i, :, :, :, 0] /= grid_area
 
         path_list = paths[i]
         for j in range(len(path_list)):
@@ -59,7 +64,7 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
             for point in path:
                 y[i, j, point[0] // grid_height, point[1] // grid_width] += 1
             # 计算 y
-            y[i, j] = y[i, j] / grid_area + y[i, j] / len(path)
+            # y[i, j] = y[i, j] / grid_area + y[i, j] / len(path)
 
     print("x:", x.shape)
     print("y:", y.shape)

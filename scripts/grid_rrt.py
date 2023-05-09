@@ -1,9 +1,9 @@
 """
 
-Path planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
+Grid RRT & NeuralGridRRT
 
-author: AtsushiSakai(@Atsushi_twi)
-modification: Zheng Dong
+Author: Zheng Dong
+Adapted from rrt.py by AtsushiSakai(@Atsushi_twi)
 
 """
 
@@ -67,7 +67,7 @@ class GridRRT:
         rand_area=None,
         expand_dis=5,
         path_resolution=1,
-        goal_sample_rate=5,
+        goal_sample_rate=0,
         max_iter=500,
         play_area=None,
         model_pred=[],
@@ -118,6 +118,10 @@ class GridRRT:
                 self.play_area.xmax // self.nh,
                 self.play_area.ymax // self.nw,
             )
+            self.in_same_grid = (
+                self.start.x // self.gh == self.end.x // self.gh
+                and self.start.y // self.gw == self.end.y // self.gw
+            )
 
     def planning(self, animation=True):
         """
@@ -128,7 +132,11 @@ class GridRRT:
 
         self.node_list = [self.start]
         for i in range(self.max_iter):
-            rnd_node = self.get_random_node(cur_node=self.node_list[-1])  # (int, int)
+            rnd_node = self.get_random_node(
+                cur_node=self.node_list[
+                    self.get_nearest_node_index(self.node_list, self.end)
+                ]
+            )  # (int, int)
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd_node)
             nearest_node = self.node_list[nearest_ind]
 
@@ -229,16 +237,18 @@ class GridRRT:
 
     def get_random_node(self, cur_node: Node):
         # ! use model_pred to guide sampling
+        # cur_node 是当前树上离终点最近的点
         if len(self.model_pred) > 0:
-            rnd = self.get_random_node_by_model(cur_node)
-        else:
-            if random.randint(0, 100) > self.goal_sample_rate:
-                rnd = self.Node(
-                    random.randint(self.min_rand, self.max_rand),
-                    random.randint(self.min_rand, self.max_rand),
-                )
-            else:  # goal point sampling
-                rnd = self.Node(self.end.x, self.end.y)
+            return self.get_random_node_by_model(cur_node)
+
+        if random.randint(0, 100) > self.goal_sample_rate:
+            rnd = self.Node(
+                random.randint(self.min_rand, self.max_rand),
+                random.randint(self.min_rand, self.max_rand),
+            )
+        else:  # goal point sampling
+            # ! 这里 goal_sample_rate 设为 0, 取消他的 heuristic
+            rnd = self.Node(self.end.x, self.end.y)
         return rnd
 
     def get_random_node_by_model(self, cur_node: Node):
@@ -256,6 +266,10 @@ class GridRRT:
                     and cur_grid_y + j < self.nw
                 ):
                     prob[i + 1, j + 1] = self.model_pred[cur_grid_x + i, cur_grid_y + j]
+        if not self.in_same_grid:
+            prob[1, 1] = -np.inf # 不让你选自己的格子
+        # 如果起点终点在同格子 则自己的格子也进入候选
+        
         prob = softmax(prob)
 
         # 按预测值加权随机挑选一个格子
@@ -455,21 +469,21 @@ def test_image_dataset(
     nw=20,
     model=None,
     batch_size=32,
-    max_iter=200,
+    max_iter=400,
     draw_list=None,
 ):
     if draw_list:
         image_path = f"../images/n_{n}_p_{p}"
         if not os.path.exists(image_path):
             os.makedirs(image_path)
-    if model:
-        image_path = os.path.join(image_path, "nrrt")
-        if not os.path.exists(image_path):
-            os.makedirs(image_path)
-    else:
-        image_path = os.path.join(image_path, "rrt")
-        if not os.path.exists(image_path):
-            os.makedirs(image_path)
+        if model:
+            image_path = os.path.join(image_path, "nrrt")
+            if not os.path.exists(image_path):
+                os.makedirs(image_path)
+        else:
+            image_path = os.path.join(image_path, "rrt")
+            if not os.path.exists(image_path):
+                os.makedirs(image_path)
 
     # images: (n, h, w)
     # obss: (n, obs_number, 4)
@@ -501,6 +515,10 @@ def test_image_dataset(
             out.append(out_batch)
         pred = np.vstack(out).squeeze()  # (n*p, nh, nw)
         pred = pred.reshape(n, p, nh, nw)
+
+        print("----- Neural Grid RRT -----")
+    else:
+        print("----- Naive RRT -----")
 
     rrt = GridRRT(
         rand_area=[0, max(h, w)],
@@ -534,7 +552,7 @@ def test_image_dataset(
                 succ_all += 1
 
             if [idx_n, idx_p] in draw_list and path:
-                print("Draw", idx_n, idx_p)
+                print(f"Draw n={idx_n} p={idx_p}")
                 rrt.draw_graph()
                 plt.plot([x for (x, y) in path], [y for (x, y) in path], "-r")
                 plt.xticks(np.arange(0, h + nh, step=nh))
@@ -563,12 +581,16 @@ if __name__ == "__main__":
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model_param_path = (
-        "../saved_models/GridGCN/GridGCN-n_500_p_20-2023-05-09-17-04-10.pt"
+        "../saved_models/GridGCN/GridGCN-n_500_p_20-2023-05-09-19-26-12.pt"
     )
 
     model = GridGCN(device=DEVICE)
     model.load_state_dict(torch.load(model_param_path))
     model = model.to(DEVICE)
 
-    draw_list = [[0, 1], [2, 3]]
-    test_image_dataset(n=20, p=10, draw_list=draw_list, model=model)
+    # draw_list = []
+    draw_list = [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
+
+    # model=None: use naive RRT
+    # model not None: use GridNeuralRRT
+    test_image_dataset(n=300, p=20, draw_list=draw_list, model=model)
