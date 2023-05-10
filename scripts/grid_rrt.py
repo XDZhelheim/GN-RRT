@@ -267,9 +267,9 @@ class GridRRT:
                 ):
                     prob[i + 1, j + 1] = self.model_pred[cur_grid_x + i, cur_grid_y + j]
         if not self.in_same_grid:
-            prob[1, 1] = -np.inf # 不让你选自己的格子
+            prob[1, 1] = -np.inf  # 不让你选自己的格子
         # 如果起点终点在同格子 则自己的格子也进入候选
-        
+
         prob = softmax(prob)
 
         # 按预测值加权随机挑选一个格子
@@ -516,7 +516,7 @@ def test_image_dataset(
         pred = np.vstack(out).squeeze()  # (n*p, nh, nw)
         pred = pred.reshape(n, p, nh, nw)
 
-        print("----- Neural Grid RRT -----")
+        print("----- Grid Neural RRT -----")
     else:
         print("----- Naive RRT -----")
 
@@ -580,6 +580,9 @@ if __name__ == "__main__":
     draw_final = True
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    # model_param_path = (
+    #     "../saved_models/GridGCN/GridGCN-n_2500_p_20-2023-05-09-23-29-49.pt"
+    # )
     model_param_path = (
         "../saved_models/GridGCN/GridGCN-n_500_p_20-2023-05-09-19-26-12.pt"
     )
@@ -588,9 +591,13 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(model_param_path))
     model = model.to(DEVICE)
 
-    # draw_list = []
-    draw_list = [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
+    n = 20
+    p = 10
+
+    draw_list = []
+    draw_list += [[i, 0] for i in range(20)]
+    draw_list += np.arange(0, 20).reshape(-1, 2).tolist()
 
     # model=None: use naive RRT
     # model not None: use GridNeuralRRT
-    test_image_dataset(n=300, p=20, draw_list=draw_list, model=model)
+    test_image_dataset(n=n, p=p, draw_list=draw_list, model=model)

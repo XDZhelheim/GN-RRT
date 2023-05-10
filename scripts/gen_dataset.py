@@ -5,9 +5,12 @@ from tqdm import tqdm
 # y: (n*p, num_grid_h, num_grid_w) 在路径的点占整个grid里点的比例+在路径的点占整个路径里点的比例
 
 # ! 更新: 不计算占比了, 直接统计数量
-# 统计占比 + MAELoss: 不太行, MAE 倾向于预测均值
+# 统计占比 + MAELoss: 不太行, MAE 倾向于预测均值, 而且都是0.0x 太小了
 #   所以预测出来每个格子的 y_pred 几乎一样 没有区分性
 # 改成统计数量 + MSELoss
+
+# ! 二更: 改成计算百分比 (对于10*10的格子 没区别)
+# 还是得适配不同尺寸的格子 做归一化
 
 
 def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
@@ -44,6 +47,7 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
                 if image[idxx, idxy] == 1:
                     x[i, :, idxx // grid_height, idxy // grid_width, 0] += 1
         # x[i, :, :, :, 0] /= grid_area
+        x[i, :, :, :, 0] = x[i, :, :, :, 0] / grid_area * 100
 
         path_list = paths[i]
         for j in range(len(path_list)):
@@ -65,6 +69,7 @@ def gen_grid_xy(images, paths, num_grid_h=20, num_grid_w=20):
                 y[i, j, point[0] // grid_height, point[1] // grid_width] += 1
             # 计算 y
             # y[i, j] = y[i, j] / grid_area + y[i, j] / len(path)
+            y[i, j] = y[i, j] / grid_area * 100
 
     print("x:", x.shape)
     print("y:", y.shape)
@@ -112,4 +117,4 @@ def gen_grid_dataset(n, p, num_grid_h=20, num_grid_w=20, train_size=0.7, val_siz
 
 
 if __name__ == "__main__":
-    gen_grid_dataset(n=500, p=20)
+    gen_grid_dataset(n=2500, p=20)

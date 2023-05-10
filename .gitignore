@@ -158,7 +158,9 @@ cython_debug/
 #.idea/
 
 temp*
-data/
 saved_models/
 images/
 nohup.out
+train_*.npz
+val_*.npz
+test_*.npz
