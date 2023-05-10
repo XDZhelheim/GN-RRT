@@ -117,4 +117,4 @@ def gen_grid_dataset(n, p, num_grid_h=20, num_grid_w=20, train_size=0.7, val_siz
 
 
 if __name__ == "__main__":
-    gen_grid_dataset(n=2500, p=20)
+    gen_grid_dataset(n=500, p=20)

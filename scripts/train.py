@@ -211,8 +211,8 @@ if __name__ == "__main__":
     # -------------------------- set running environment ------------------------- #
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", type=int, default="20")
-    parser.add_argument("-p", type=int, default="10")
+    parser.add_argument("-n", type=int, default="500")
+    parser.add_argument("-p", type=int, default="20")
     parser.add_argument("-m", "--model", type=str, default="gridgcn")
     parser.add_argument("-g", "--gpu_num", type=int, default=0)
     parser.add_argument("-c", "--compile", action="store_true")

@@ -2,8 +2,40 @@
 
 Training code is adapted from my repo [Torch-MTS](https://github.com/XDZhelheim/Torch-MTS).
 
+GN-RRT vs. RRT:
 ![](./result_images/10-gnrrt.png) | ![](./result_images/10-rrt.png)
 ---|---
+
+## Instruction
+
+1. `a_star_gen_images.py`
+
+    generate `n` images, and `p` (start, end) pairs for each image.
+
+    in total `n*p` image samples.
+
+    default image shape: 200\*200
+
+2. `gen_dataset.py`
+
+    generate train, validation and test datasets for given `n` and `p`.
+
+    specify `num_grids_height` and `num_grids_width` in this file.
+
+    default: 20\*20 grids, each grid is of 10\*10 shape
+
+3. `train.py`
+
+    train the model.
+    ```bash
+    python train.py -m gridgcn -n 500 -p 20 -g <your_gpu_id>
+    ```
+
+4. `grid_rrt.py`
+
+    run NaiveRRT or GridNeuralRRT.
+
+    see this file for details.
 
 ## Results
 
